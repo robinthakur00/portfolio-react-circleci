@@ -2,31 +2,38 @@ version: 2.1
 
 jobs:
   build:
-    machine:
-      image: ubuntu-2004:202010-01
+    docker:
+      - image: node:14
     steps:
       - checkout
       - run:
           name: Installing AWS CLI
           command: |
-            sudo apt-get update
-            sudo apt install python3-pip
-            sudo pip3 install awsebcli --upgrade
-      - run: npm install && npm run build
+            apt-get update
+            apt-get install -y python3-pip
+            pip3 install awsebcli --upgrade
+      - run:
+          name: Install Dependencies and Build
+          command: |
+            npm install
+            npm run build
       - persist_to_workspace:
           root: .
           paths:
             - .
 
   deploy:
-    machine:
-        image: ubuntu-2004:202010-01
+    docker:
+      - image: python:3.8
     steps:
       - attach_workspace:
           at: .
-      - checkout
-      - run: aws s3 sync ./build s3://portfolio-website-circleci-bucket
-    
+      - run:
+          name: Deploy to AWS S3
+          command: |
+            apt-get update
+            apt-get install -y awscli
+            aws s3 sync ./build s3://portfolio-website-circleci-bucket
 
 workflows:
   build_and_deploy:
